@@ -18,6 +18,7 @@ LOAD BALANCER SOLUTION WITH APACHE
 - Each URL contains a [domain name](https://en.wikipedia.org/wiki/Domain_name) part, which is translated (resolved) to IP address of a target server that will serve requests when open a website in the Internet. Translation (resolution) of domain names is perormed by [DNS servers](https://en.wikipedia.org/wiki/Domain_Name_System), the most commonly used one has a public IP address 8.8.8.8 and belongs to Google. You can try to query it with [nslookup](https://en.wikipedia.org/wiki/Nslookup) command:
 
 Run below command on your running DB Server from Project 7
+
 `nslookup 8.8.8.8`
 
 ![8_1](https://github.com/EzeOnoky/Project-Base-Learning-8/assets/122687798/6dd4ea03-b15a-4d18-bb27-ab33978627ef)
@@ -58,21 +59,21 @@ Run below command on your running DB Server from Project 7
 
 ## ***CONFIGURE APACHE AS A LOAD BALANCER***
 
-1. - Create an Ubuntu Server 20.04 EC2 instance and name it Project-8-apache-lb, so your EC2 list will look like this:
+1. - I Created an Ubuntu Server 20.04 EC2 instance and named it Project-8-apache-lb, below is the look of my EC2 list:
 
 <img width="736" alt="ECs running" src="https://user-images.githubusercontent.com/115954100/225525386-220a40b6-23ac-4e52-9ca4-997876b31b0d.png">
 
-2. - Open TCP port 80 on Project-8-apache-lb by creating an Inbound Rule in Security Group.
+2. - I opened TCP port 80 on Project-8-apache-lb by creating an Inbound Rule in Security Group.
 
-3. - Install Apache Load Balancer on Project-8-apache-lb server and configure it to point traffic coming to LB to both Web Servers:
+3. - I installed Apache Load Balancer on Project-8-apache-lb server and configure it to point traffic coming to LB to both Web Servers:
 
 ```
-#Install apache2
+#Install apache2 and its dependencies
 sudo apt update
 sudo apt install apache2 -y
 sudo apt-get install libxml2-dev
 
-#Enable following modules:
+#Enable following modules that will enable the apache work well:
 sudo a2enmod rewrite
 sudo a2enmod proxy
 sudo a2enmod proxy_balancer
@@ -91,10 +92,16 @@ sudo systemctl restart apache2
 - **Configure load balancing**
 
 ```
+#Below is he default config file of Apache2
+#Enter this config file and make some changes
 sudo vi /etc/apache2/sites-available/000-default.conf
 
 #Add this configuration into this section <VirtualHost *:80>  </VirtualHost>
+#this add file is telling the apache server to map the web servers IP to the 
+#loadbalancer such that we can reach the web servers from the LB & the LB
+#can efficiently distribute traffic to the Web Servers
 
+#Scripted
 <Proxy "balancer://mycluster">
                BalancerMember http://<WebServer1-Private-IP-Address>:80 loadfactor=5 timeout=1
                BalancerMember http://<WebServer2-Private-IP-Address>:80 loadfactor=5 timeout=1
@@ -106,9 +113,25 @@ sudo vi /etc/apache2/sites-available/000-default.conf
         ProxyPreserveHost On
         ProxyPass / balancer://mycluster/
         ProxyPassReverse / balancer://mycluster/
+        
+#Executed
+<Proxy "balancer://mycluster">
+               BalancerMember http://<WebServer1-Private-IP-Address>:80 loadfactor=5 timeout=1
+               BalancerMember http://<WebServer2-Private-IP-Address>:80 loadfactor=5 timeout=1
+               BalancerMember http://<WebServer3-Private-IP-Address>:80 loadfactor=5 timeout=1
+               ProxySet lbmethod=bytraffic
+               # ProxySet lbmethod=byrequests
+        </Proxy>
+
+        ProxyPreserveHost On
+        ProxyPass / balancer://mycluster/
+        ProxyPassReverse / balancer://mycluster/        
 
 #Restart apache server
 
 sudo systemctl restart apache2
 ```
+
+![8_4](https://github.com/EzeOnoky/Project-Base-Learning-8/assets/122687798/de0698f9-4d78-4052-b102-b194e5432a68)
+
 

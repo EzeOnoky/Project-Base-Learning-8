@@ -59,13 +59,16 @@ Run below command on your running DB Server from Project 7
 
 ## ***CONFIGURE APACHE AS A LOAD BALANCER***
 
-1. - I Created an Ubuntu Server 20.04 EC2 instance and named it Project-8-apache-lb, below is the look of my EC2 list:
+## 1 
+- I Created an Ubuntu Server 20.04 EC2 instance and named it Project-8-apache-lb, below is the look of my EC2 list:
 
 <img width="736" alt="ECs running" src="https://user-images.githubusercontent.com/115954100/225525386-220a40b6-23ac-4e52-9ca4-997876b31b0d.png">
 
-2. - I opened TCP port 80 on Project-8-apache-lb by creating an Inbound Rule in Security Group.
+## 2 
+- I opened TCP port 80 on Project-8-apache-lb by creating an Inbound Rule in Security Group.
 
-3. - I installed Apache Load Balancer on Project-8-apache-lb server and configure it to point traffic coming to LB to both Web Servers:
+## 3
+- I installed Apache Load Balancer on Project-8-apache-lb server and configure it to point traffic coming to LB to both Web Servers:
 
 ```
 #Install apache2 and its dependencies
@@ -133,5 +136,96 @@ sudo systemctl restart apache2
 ```
 
 ![8_4](https://github.com/EzeOnoky/Project-Base-Learning-8/assets/122687798/de0698f9-4d78-4052-b102-b194e5432a68)
+
+In Apache, there are different type of Load Balancing Methods - for our project, we are using load balancing by traffic
+- [bytraffic](https://httpd.apache.org/docs/2.4/mod/mod_lbmethod_bytraffic.html) balancing method will distribute incoming load between your Web Servers according to current traffic load. We can control in which proportion the traffic must be distributed by **loadfactor** parameter.
+
+- You can also study and try other methods, like: [bybusyness](https://httpd.apache.org/docs/2.4/mod/mod_lbmethod_bybusyness.html), [byrequests](https://httpd.apache.org/docs/2.4/mod/mod_lbmethod_byrequests.html), [heartbeat](https://httpd.apache.org/docs/2.4/mod/mod_lbmethod_heartbeat.html).
+
+## 4
+- I verified that my configuration works – by accessing my LB’s public IP address or Public DNS name from my browser:
+
+```
+Script
+http://<Load-Balancer-Public-IP-Address-or-Public-DNS-Name>/index.php
+
+Executed
+http://<Load-Balancer-Public-IP-Address-or-Public-DNS-Name>/index.php
+```
+
+- **Note:** If in the Project-7 you mounted /var/log/httpd/ from your Web Servers to the NFS server – unmount them and make sure that each Web Server has its own log directory.
+
+Use below command to achieve the unmounting
+
+`sudo umount -f /var/log/httpd`
+
+- I opened two ssh/Putty consoles for my running Web Servers and ran following command to access the log file, the log will show events, people wo tried to access the web server via the LB:
+
+`sudo tail -f /var/log/httpd/access_log`
+
+- Try to refresh your browser page from different terminals and check the access log file also, i saw the terminal that tried to access the web page, the location of the terminal etc
+
+![8_5](https://github.com/EzeOnoky/Project-Base-Learning-8/assets/122687798/78cc0046-6ed8-4108-b522-dd3141882c63)
+
+- http://<Load-Balancer-Public-IP-Address-or-Public-DNS-Name>/index.php several times and make sure that both servers receive HTTP GET requests from your LB – new records must appear in each server’s log file. The number of requests to each server will be approximately the same since we set **loadfactor** to the same value for both servers – it means that traffic will be disctributed evenly between them.
+  
+  **Side Self Study:**
+  
+- Read more about different configuration aspects of [Apache mod_proxy_balancer module](https://httpd.apache.org/docs/2.4/mod/mod_proxy_balancer.html). Understand what sticky session means and when it is used.
+  
+**Optional Step – Configure Local DNS Names Resolution**
+  
+- Sometimes it is tedious to remember and switch between IP addresses, especially if you have a lot of servers under your management.
+What we can do, is to configure local domain name resolution. The easiest way is to use **/etc/hosts** file, although this approach is not very scalable, but it is very easy to configure and shows the concept well. So let us configure IP address to domain name mapping for our LB.
+  
+```
+#I Opened this file on my LB server
+
+sudo vi /etc/hosts
+
+#Add 3 records into this file with Local IP address and arbitrary name for both of your Web Servers
+
+Script  
+<WebServer1-Private-IP-Address> Web1
+<WebServer2-Private-IP-Address> Web2
+<WebServer2-Private-IP-Address> Web3  
+  
+Executed
+<WebServer1-Private-IP-Address> Web1
+<WebServer2-Private-IP-Address> Web2
+<WebServer2-Private-IP-Address> Web3  
+```  
+
+![8_6](https://github.com/EzeOnoky/Project-Base-Learning-8/assets/122687798/aa28b13a-d911-4938-b20b-c9c2e400f63c)
+  
+- Now I can update my LB config file with those names instead of IP addresses. 1st i opened the default config of the apache2 page using the `sudo vi` command
+  
+```
+sudo vi /etc/apache2/sites-available/000-default.conf
+
+#remove the IPs and replace it with the domain name  
+BalancerMember http://Web1:80 loadfactor=5 timeout=1
+BalancerMember http://Web2:80 loadfactor=5 timeout=1
+BalancerMember http://Web3:80 loadfactor=5 timeout=1
+```  
+
+![8_7](https://github.com/EzeOnoky/Project-Base-Learning-8/assets/122687798/bcd3bebe-4077-45de-81e1-6e8fbf84839d)
+  
+- I tried to **curl** my Web Servers from LB locally and it worked...
+  
+```
+curl http://Web1
+curl http://Web2
+```
+  
+Below is the HTML version of our web server 1, this is the same as the web page below.  
+
+- Remember, this is only internal configuration and it is also local to your LB server, these names will neither be ‘resolvable’ from other servers internally nor from the Internet. 
+  
+- Targed Architecture
+Now my set up looks like this:
+  
+![8_8](https://github.com/EzeOnoky/Project-Base-Learning-8/assets/122687798/e76b8330-8c4f-47f6-885c-a4527768929f)
+  
 
 

@@ -94,21 +94,20 @@ sudo systemctl restart apache2
 
 - **Configure load balancing**
 
+
+#On below path is the default config file of Apache2, Enter this config file and make some changes
+
+`sudo vi /etc/apache2/sites-available/000-default.conf`
+
+#Add this configuration into this section <VirtualHost *:80>  </VirtualHost>...
+
+#This added file is telling the apache server to map the web servers IP to the loadbalancer such that we can reach the web servers from the LB & the LB can efficiently distribute traffic to the Web Servers
+
 ```
-#Below is he default config file of Apache2
-#Enter this config file and make some changes
-sudo vi /etc/apache2/sites-available/000-default.conf
-
-#Add this configuration into this section <VirtualHost *:80>  </VirtualHost>
-#this add file is telling the apache server to map the web servers IP to the 
-#loadbalancer such that we can reach the web servers from the LB & the LB
-#can efficiently distribute traffic to the Web Servers
-
 #Scripted
 <Proxy "balancer://mycluster">
                BalancerMember http://<WebServer1-Private-IP-Address>:80 loadfactor=5 timeout=1
                BalancerMember http://<WebServer2-Private-IP-Address>:80 loadfactor=5 timeout=1
-               BalancerMember http://<WebServer3-Private-IP-Address>:80 loadfactor=5 timeout=1
                ProxySet lbmethod=bytraffic
                # ProxySet lbmethod=byrequests
         </Proxy>
@@ -119,21 +118,25 @@ sudo vi /etc/apache2/sites-available/000-default.conf
         
 #Executed
 <Proxy "balancer://mycluster">
-               BalancerMember http://<WebServer1-Private-IP-Address>:80 loadfactor=5 timeout=1
-               BalancerMember http://<WebServer2-Private-IP-Address>:80 loadfactor=5 timeout=1
-               BalancerMember http://<WebServer3-Private-IP-Address>:80 loadfactor=5 timeout=1
+               BalancerMember http://172.31.88.49:80 loadfactor=5 timeout=1
+               BalancerMember http://172.31.89.61:80 loadfactor=5 timeout=1
                ProxySet lbmethod=bytraffic
                # ProxySet lbmethod=byrequests
         </Proxy>
 
         ProxyPreserveHost On
         ProxyPass / balancer://mycluster/
-        ProxyPassReverse / balancer://mycluster/        
+        ProxyPassReverse / balancer://mycluster/
+```
+
+![8_11](https://github.com/EzeOnoky/Project-Base-Learning-8/assets/122687798/a3500857-2479-4f24-9469-9a11a1449857)
+
+Above is telling the Loader Balance to mapped the Web server private IP such that we can reach the web server from the loader balancer, the loader balancer can also server to distribute traffic to the web server efficiently
 
 #Restart apache server
 
-sudo systemctl restart apache2
-```
+`sudo systemctl restart apache2`
+
 
 ![8_4](https://github.com/EzeOnoky/Project-Base-Learning-8/assets/122687798/de0698f9-4d78-4052-b102-b194e5432a68)
 

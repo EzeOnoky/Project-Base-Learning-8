@@ -59,16 +59,13 @@ Run below command on your running DB Server from Project 7
 
 ## ***CONFIGURE APACHE AS A LOAD BALANCER***
 
-## 1 
-- I Created an Ubuntu Server 20.04 EC2 instance and named it Project-8-apache-lb, below is the look of my EC2 list:
+## 1 - I Created an Ubuntu Server 20.04 EC2 instance and named it Project-8-apache-lb, below is the look of my EC2 list:
 
 <img width="736" alt="ECs running" src="https://user-images.githubusercontent.com/115954100/225525386-220a40b6-23ac-4e52-9ca4-997876b31b0d.png">
 
-## 2 
-- I opened TCP port 80 on Project-8-apache-lb by creating an Inbound Rule in Security Group.
+## 2 - I opened TCP port 80 on Project-8-apache-lb by creating an Inbound Rule in Security Group.
 
-## 3
-- I installed Apache Load Balancer on Project-8-apache-lb server and configure it to point traffic coming to LB to both Web Servers:
+## 3 - I installed Apache Load Balancer on Project-8-apache-lb server and configure it to point traffic coming to LB to both Web Servers:
 
 ```
 #Install apache2 and its dependencies
@@ -137,32 +134,34 @@ Above is telling the Loader Balance to mapped the Web server private IP such tha
 
 `sudo systemctl restart apache2`
 
-
-![8_4](https://github.com/EzeOnoky/Project-Base-Learning-8/assets/122687798/de0698f9-4d78-4052-b102-b194e5432a68)
-
 In Apache, there are different type of Load Balancing Methods - for our project, we are using load balancing by traffic
-- [bytraffic](https://httpd.apache.org/docs/2.4/mod/mod_lbmethod_bytraffic.html) balancing method will distribute incoming load between your Web Servers according to current traffic load. We can control in which proportion the traffic must be distributed by **loadfactor** parameter.
+- [bytraffic](https://httpd.apache.org/docs/2.4/mod/mod_lbmethod_bytraffic.html)
 
-- You can also study and try other methods, like: [bybusyness](https://httpd.apache.org/docs/2.4/mod/mod_lbmethod_bybusyness.html), [byrequests](https://httpd.apache.org/docs/2.4/mod/mod_lbmethod_byrequests.html), [heartbeat](https://httpd.apache.org/docs/2.4/mod/mod_lbmethod_heartbeat.html).
+Traffic Load balancing method will distribute incoming load between your Web Servers according to current traffic load. We can control in which proportion the traffic must be distributed by **loadfactor** parameter - see diagram above and spot the loadfactor parameter.
 
-## 4
-- I verified that my configuration works – by accessing my LB’s public IP address or Public DNS name from my browser:
+- You can also study and try other methods of load balancing like, like:
+-  [bybusyness](https://httpd.apache.org/docs/2.4/mod/mod_lbmethod_bybusyness.html),
+-  [byrequests](https://httpd.apache.org/docs/2.4/mod/mod_lbmethod_byrequests.html),
+-  [heartbeat](https://httpd.apache.org/docs/2.4/mod/mod_lbmethod_heartbeat.html).
+
+## 4 - I verified that my configuration works – by accessing my LB’s public IP address or Public DNS name from my browser:
 
 ```
 Script
 http://<Load-Balancer-Public-IP-Address-or-Public-DNS-Name>/index.php
 
 Executed
-http://<Load-Balancer-Public-IP-Address-or-Public-DNS-Name>/index.php
+http://52.207.88.80/index.php
 ```
 
 - **Note:** If in the Project-7 you mounted /var/log/httpd/ from your Web Servers to the NFS server – unmount them and make sure that each Web Server has its own log directory.
 
-Use below command to achieve the unmounting
+I used below command to achieve the unmounting.
 
 `sudo umount -f /var/log/httpd`
 
-- I opened two ssh/Putty consoles for my running Web Servers and ran following command to access the log file, the log will show events, people wo tried to access the web server via the LB:
+- I opened two ssh/Putty consoles for my running Web Servers and ran following command to access the log file, the log will show events, people wo tried to access the web server via the LB: NOTE - If the unmount is not done on any of the web server, the expected log will still populate on the webserver whenever u try to access the load balancer page
+- 
 
 `sudo tail -f /var/log/httpd/access_log`
 
@@ -179,7 +178,7 @@ Use below command to achieve the unmounting
 **Optional Step – Configure Local DNS Names Resolution**
   
 - Sometimes it is tedious to remember and switch between IP addresses, especially if you have a lot of servers under your management.
-What we can do, is to configure local domain name resolution. The easiest way is to use **/etc/hosts** file, although this approach is not very scalable, but it is very easy to configure and shows the concept well. So let us configure IP address to domain name mapping for our LB.
+What we can do, is to configure local domain name resolution. The easiest way is to use `/etc/hosts` file, although this approach is not very scalable, but it is very easy to configure and shows the concept well. So let us configure IP address to domain name mapping for our LB.
   
 ```
 #I Opened this file on my LB server
@@ -191,16 +190,18 @@ sudo vi /etc/hosts
 Script  
 <WebServer1-Private-IP-Address> Web1
 <WebServer2-Private-IP-Address> Web2
-<WebServer2-Private-IP-Address> Web3  
+
   
 Executed
 <WebServer1-Private-IP-Address> Web1
 <WebServer2-Private-IP-Address> Web2
-<WebServer2-Private-IP-Address> Web3  
-```  
 
-![8_6](https://github.com/EzeOnoky/Project-Base-Learning-8/assets/122687798/aa28b13a-d911-4938-b20b-c9c2e400f63c)
-  
+```
+
+![8_12](https://github.com/EzeOnoky/Project-Base-Learning-8/assets/122687798/ef1bed10-f7c4-431a-b978-f6d36e839952)
+
+
+ 
 - Now I can update my LB config file with those names instead of IP addresses. 1st i opened the default config of the apache2 page using the `sudo vi` command
   
 ```
@@ -209,10 +210,10 @@ sudo vi /etc/apache2/sites-available/000-default.conf
 #remove the IPs and replace it with the domain name  
 BalancerMember http://Web1:80 loadfactor=5 timeout=1
 BalancerMember http://Web2:80 loadfactor=5 timeout=1
-BalancerMember http://Web3:80 loadfactor=5 timeout=1
 ```  
 
-![8_7](https://github.com/EzeOnoky/Project-Base-Learning-8/assets/122687798/bcd3bebe-4077-45de-81e1-6e8fbf84839d)
+![8_13](https://github.com/EzeOnoky/Project-Base-Learning-8/assets/122687798/66c47931-bc6a-4754-9144-fbf26acf63af)
+
   
 - I tried to **curl** my Web Servers from LB locally and it worked...
   
@@ -221,7 +222,10 @@ curl http://Web1
 curl http://Web2
 ```
   
-Below is the HTML version of our web server 1, this is the same as the web page below.  
+Below is the HTML version of our web server 1, this is the same as the web page below. 
+
+![8_14](https://github.com/EzeOnoky/Project-Base-Learning-8/assets/122687798/76cedd87-a739-4853-a8b3-457d938591d5)
+
 
 - Remember, this is only internal configuration and it is also local to your LB server, these names will neither be ‘resolvable’ from other servers internally nor from the Internet. 
   
@@ -231,4 +235,5 @@ Now my set up looks like this:
 ![8_8](https://github.com/EzeOnoky/Project-Base-Learning-8/assets/122687798/e76b8330-8c4f-47f6-885c-a4527768929f)
   
 
+# Congratulations EZE ! You have just implemented a Load balancing Web Solution for your DevOps team.
 
